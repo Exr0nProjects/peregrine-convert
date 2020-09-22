@@ -33,3 +33,6 @@ main
 *.app
 
 data*.csv
+*.bin
+*.hex
+*.diff
