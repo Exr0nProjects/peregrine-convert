@@ -52,7 +52,6 @@ void prep()
 }
 void read()
 {
-    FILE* wptr = fopen("compressed.bin", "wb");
     static const auto BUFFER_SIZE = 16*1024;
     int fd = open("data.csv", O_RDONLY | O_NONBLOCK);
     if (fd == -1) {
@@ -70,11 +69,11 @@ void read()
             char* bound = (char*) memchr(p, '\n', (buf + bytes_read) - p);
             if (bound - p < 0) break; // Stop.
             for (int i=0; i<5; ++i) {
-                tmp = *(float*) p;
+                tmp = *(float*)p;
                 printf("%f\n", tmp);
+                p+=sizeof(float);
             }
             p = bound + 1;
-            putc('\n', wptr);
         }
     }
 }
