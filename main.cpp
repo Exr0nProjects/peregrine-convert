@@ -7,6 +7,10 @@
 
 #define isdigit(x) (x >= '0' && x <= '9')
 #define isnumchar(x) ((x >= '0' && x <= '9') || x == '-' || x == '.')
+#define tonum(x) (x-'0') // could be replaced with a hex conversion expression, for example
+
+const size_t  IN_BUFFER_SIZE = 16;
+const size_t OUT_BUFFER_SIZE = 16;
 
 const size_t DEBUG_BUF_SIZE = 1e5;
 float proc[DEBUG_BUF_SIZE];
@@ -30,30 +34,54 @@ void prep()
 {
     FILE* wf = fopen("compressed.bin", "wb");
     //const size_t BUFFER_SIZE = 16*1024;
-    const size_t BUFFER_SIZE = 16;
     int rfd = open("data.csv", O_RDONLY | O_NONBLOCK);
 
     if (~rfd) printf("reading file...\n");
     else { printf("Invalid input file\n"); return; }
 
-    char buf[BUFFER_SIZE+1];
-    char *p = buf; val_t n; int neg = 1;
-    while (read(rfd, buf, BUFFER_SIZE))
-    {
-        while (!isnumchar(*p) && p < buf) ++p;  // TODO: working on smushing scan into prep to avoid cutting numbers in half, global state p and buf, so make a class
+    char  ibuf[ IN_BUFFER_SIZE*sizeof(char)];
+    val_t obuf[OUT_BUFFER_SIZE*sizeof(val_t)];
+    obuf[0] = 0;
 
-        printf("'%s'\n\n", buf);
+    val_t *op = obuf; val_t neg = 1, dec = 0;
+    while (read(rfd, ibuf, IN_BUFFER_SIZE-1))
+    {
+        for (char *ip=ibuf; ip<ibuf+IN_BUFFER_SIZE-1; ++ip)
+        {
+            printf("    buf[%2d]: char '%d'    cur %10.2f     neg %2.0f dec %2.0f\n", ip-ibuf, *ip, neg, dec);
+            if (!isnumchar(*ip))
+            {
+                if (dec) // was processing a number
+                    if (++op > obuf+OUT_BUFFER_SIZE) op = obuf /* TODO: flush to file */;
+                dec = 0;
+                neg = 1;
+                *op = 0;
+                printf("got %f\n", op[-1]);
+            }
+            else if (*ip == '-') neg = -1;
+            else if (*ip == '.') dec =  1;
+            else    // it's a digit
+            {
+                if (dec > 0) *op += (dec /= 10) * tonum(*ip);
+                else        (*op *= 10) += tonum(*ip), dec=-1;
+            }
+        }
+
+        //while (!isnumchar(*p) && p < buf) ++p;  // TODO: working on smushing scan into prep to avoid cutting numbers in half, global state p and buf, so make a class
+
+        //printf("'%s'\n\n", ibuf);
+        //for (val_t *i=obuf; i<op; ++i) printf("%f ", *i); printf("\n");
     }
 
     // TODO: scan
-    val_t n;
-    int neg = 1;
-    if (**p == '-') neg = -1, ++*p;
-    for (n=0; isdigit(**p); ++*p) (n *= 10) += (**p-'0');
-    if (*(*p)++ != '.') return n*neg;
-    val_t d = 1;
-    for (; isdigit(**p); ++*p) n += (d /= 10) * (**p-'0');
-    return n*neg;
+    //val_t n;
+    //int neg = 1;
+    //if (**p == '-') neg = -1, ++*p;
+    //for (n=0; isdigit(**p); ++*p) (n *= 10) += (**p-'0');
+    //if (*(*p)++ != '.') return n*neg;
+    //val_t d = 1;
+    //for (; isdigit(**p); ++*p) n += (d /= 10) * (**p-'0');
+    //return n*neg;
 }
 
 // with github.com/richardfeynmanrocks
