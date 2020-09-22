@@ -160,15 +160,16 @@ Sec stopwatch(F&& fn)
 
 int main()
 {
-    std::string infile = "data.csv";
+    std::string infile = "data3.csv";
     std::string outfile1 = "compressed.bin";
     std::string outfile2 = "compressed2.bin";
     std::string infile_cmp = "data3proc.csv";
     //Sec time1 = stopwatch([](){ return 2; });
-    //Sec time2 = stopwatch(std::bind(compress2, infile, outfile2));
+    Sec time2 = stopwatch(std::bind(compress2, infile, outfile2));
+    printf("time = %f\n", time2);
     //double sped = time1/time2 * 100;
     //printf("operations took %lfs and %lfs for a %lf%% speedup\n", time1, time2, sped-100);
-    read(outfile2, infile_cmp, compress2(infile, outfile2));
+    //read(outfile2, infile_cmp, compress2(infile, outfile2));
     //printf("okie, wrote %d numbers\n", compress());
 }
 
