@@ -36,3 +36,4 @@ data*.csv
 *.bin
 *.hex
 *.diff
+.DS_Store
