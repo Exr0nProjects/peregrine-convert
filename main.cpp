@@ -6,6 +6,10 @@
 
 #define isdigit(x) (x >= '0' && x <= '9')
 
+
+const size_t DEBUG_BUF_SIZE = 1e5;
+float proc[DEBUG_BUF_SIZE];
+
 typedef float val_t;
 
 inline val_t scan(char **p)
@@ -24,6 +28,7 @@ inline val_t scan(char **p)
 // with github.com/richardfeynmanrocks
 void prep()
 {
+    int num_cnt = 0;
     FILE* wptr = fopen("compressed.bin", "wb");
     static const auto BUFFER_SIZE = 16*1024;
     int fd = open("data.csv", O_RDONLY | O_NONBLOCK);
@@ -43,17 +48,18 @@ void prep()
             if (bound - p < 0) break; // Stop.
             for (int i=0; i<5; ++i) {
                 tmp = scan(&p);
+                proc[num_cnt++ % DEBUG_BUF_SIZE] = tmp;
                 fwrite((void*)&tmp, sizeof(val_t), 1, wptr);
             }
             p = bound + 1;
-            putc('\n', wptr);
         }
     }
 }
 void read()
 {
+    int num_cnt = 0;
     static const auto BUFFER_SIZE = 16*1024;
-    int fd = open("data.csv", O_RDONLY | O_NONBLOCK);
+    int fd = open("compressed.bin", O_RDONLY | O_NONBLOCK);
     if (fd == -1) {
         printf("fd == -1\n");
     }
@@ -64,16 +70,18 @@ void read()
         if (bytes_read == (size_t)-1) {
             printf("bytes_read == (size_t)-1\n");
         }
-        if (!bytes_read) break;
-        for (char *p = buf;;) {
-            char* bound = (char*) memchr(p, '\n', (buf + bytes_read) - p);
-            if (bound - p < 0) break; // Stop.
-            for (int i=0; i<5; ++i) {
-                tmp = *(float*)p;
-                printf("%f\n", tmp);
-                p+=sizeof(float);
-            }
-            p = bound + 1;
+        //if (!bytes_read) break;
+        for (char *p = buf; p < buf+BUFFER_SIZE;) {
+            //char* bound = (char*) memchr(p, '\n', (buf + bytes_read) - p);
+            //if (bound - p < 0) break; // Stop.
+            //for (int i=0; i<5; ++i) {
+            tmp = *(float*)p;
+            if (proc[num_cnt++ % DEBUG_BUF_SIZE] != tmp)
+                printf("printf %3d mismatech: %f vs %f\n", num_cnt-1, proc[(num_cnt-1) % DEBUG_BUF_SIZE], tmp);
+
+            p+=sizeof(float);
+            //}
+            //p = bound + 1;
         }
     }
 }
@@ -81,6 +89,7 @@ void read()
 int main()
 {
     prep();
+    scanf("%*c");
     read();
 }
 
